@@ -23,8 +23,6 @@ typedef struct fileSys{
     file *active;
 }fileSys;
 
-file *createFile(char *name, int isDirectory, file *parent);
-file *createFileSystem();
-
-
+void safemalloc(size_t n);
+file *initFiles();
 #endif
