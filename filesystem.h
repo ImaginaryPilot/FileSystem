@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "trie.h"
 
 void cd(file **currentDir, file *root, char *path);
 void ls();
