@@ -8,21 +8,23 @@
 //struct for directory
 typedef struct file {
     char name[60];
-    int isDirectory;
+    bool isDirectory;
     struct file *parent;
-    // Inode reference;    
+    int referenceCount;
+    int numChild;
     union {
         struct file *children[50]; // For directories: array of child pointers
         char *data; // For regular files: stores file content (ASCII string)
     } content;
 } file;
 
-file *createFile(char *name, int isDirectory, file *parent, char *data);
+typedef struct fileSys{
+    file *root;
+    file *active;
+}fileSys;
+
+file *createFile(char *name, int isDirectory, file *parent);
 file *createFileSystem();
-file *searchFile(file *root, char *path);
-void insertFile(file *root, char *path, int isDirectory, char *data);
-void removeFile(file *parent, char *path);
-void freeFile(file *root);
-void printFileSystem(file *root, int depth);
+
 
 #endif
