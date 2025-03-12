@@ -24,8 +24,17 @@ void cd(file **currentDir, file *root, char *path){
     }
 }
 
-void ls(){
-    printf("ls");
+void ls(file *active){
+    if(active->isDirectory == false  || active->numChild == 0) {
+        return;
+    }
+    
+
+    
+
+    for(int i = 0; i< active->numChild; i++){
+        printf("%s\n", active->content.children[i]->name);
+    }
 }
 
 void cat(file *currentDir, char *path){
