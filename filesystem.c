@@ -1,5 +1,5 @@
 #include "filesystem.h"
-#include "trie.h"
+#include "createFile.h"
 
 void cd(file **currentDir, file *root, char *path){
     if (path == NULL || strcmp(path, "/") == 0) {

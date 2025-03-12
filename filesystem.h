@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "createFile.h"
 
 void cd(file **currentDir, file *root, char *path);
 void ls();
