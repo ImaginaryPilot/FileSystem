@@ -17,12 +17,12 @@ typedef struct file {
     } content;
 } file;
 
-file *createFile(char *name, int isDirectory, file *parent);
+file *createFile(char *name, int isDirectory, file *parent, char *data);
 file *createFileSystem();
-// void searchFile(file *target)
-// void insertFile(file *root, char *path, int isDirectory);
-// int removeFile(file *parent, char *name);
-// void freeTrie(file *root);
-// void printFileSystem(file *root, int depth);
+file *searchFile(file *root, char *path);
+void insertFile(file *root, char *path, int isDirectory, char *data);
+void removeFile(file *parent, char *path);
+void freeFile(file *root);
+void printFileSystem(file *root, int depth);
 
 #endif
