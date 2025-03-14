@@ -28,10 +28,15 @@ void ls(file *active){
     if(active->isDirectory == false  || active->numChild == 0) {
         return;
     }
-    
-
-    
-
+    for(int i = 0; i < active->numChild; i++){
+        for(int j = i+1; j <= active->numChild; j++){
+            if(strcmp(active->content.children[i]->name, active->content.children[j]->name)>0){
+                file *temp = active->content.children[i]
+                active->content.children[i] = active->content.children[j];
+                active->content.children[j] = temp;
+            }
+        }
+    }
     for(int i = 0; i< active->numChild; i++){
         printf("%s\n", active->content.children[i]->name);
     }
@@ -54,6 +59,7 @@ void find(fileSys *files, file *active, char *path){
                 }
             }
         }
+
     }
 }
 
