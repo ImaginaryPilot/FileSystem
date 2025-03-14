@@ -26,7 +26,6 @@ void cd(fileSys **files, char *path){
 
 void ls(file *active){
     if(active->isDirectory == 0  || active->numChild == 0) {
-        printf("return\n");
         return;
     }
     for(int i = 0; i < active->numChild; i++){
@@ -49,85 +48,111 @@ void cat(fileSys **files, char *path){
     printf("%s\n", newDir->content.data);
 }
 
-void find(fileSys **files, file *active, char *path){
+void find(file *root, char *path){
+    if (root == NULL) return;
+
     printf("%s\n", path);
-    if(active->isDirectory == 1){
-        for(int i = 0; i < active->numChild; i++){
-            for(int j = i+1; j <= active->numChild; j++){
-                if(active->content.children[j] == NULL) continue;
-                if(strcmp(active->content.children[i]->name, active->content.children[j]->name)>0){
-                    file *temp = active->content.children[i];
-                    active->content.children[i] = active->content.children[j];
-                    active->content.children[j] = temp;
-                }
-            }
+    
+    if(root->isDirectory){
+        // Sort the children in ASCII order
+        qsort(root->content.children, root->numChild, sizeof(file *), compareFiles);
+
+        for(int i = 0; i < root->numChild; i++){
+            if(root->content.children[i] == NULL) continue;
+
+            char newPath[256];
+            snprintf(newPath, sizeof(newPath), "%s/%s", path, root->content.children[i]->name);
+
+            find(root->content.children[i], newPath);
         }
     }
-    for(int i=0; i <= active->numChild; i++){
-        char createPath[256];
-        strcat(createPath, path);
-        strcat(createPath, "/");
-        strcat(createPath, active->content.children[i]->name);
-        find(files, active->content.children[i], createPath);
-    }
 }
 
-void touch() {
-    /*char *token = strtok(filename, " ");  // Get the first filename
+void touch(fileSys **files, char *path) {
+    // Handle nested directory creation (path contains "/")
+    file *originalActive = (*files)->active;
+    
+    insertFile((*files)->root, path, 0, NULL);
 
-    while (token != NULL) {
-        // Create an empty file in the current directory
-        insertFile(currentDir, token, 0, NULL);
-        token = strtok(NULL, " ");  // Get the next filename
-    }*/
+    // Reset the active directory back to the original
+    (*files)->active = originalActive;
 }
 
-void echo(){
-    printf("echo");
+void echo(fileSys **files, char *path){
+    printf("%s\n", path);
+
+    char pathCopy[256];  // No need for malloc, use a fixed-size array
+    strncpy(pathCopy, path, sizeof(path) - 1);  // Copy the commandLine to pathCopy
 }
 
 void mkdir(fileSys **files, char *path){
-    char *token = strtok(path, " "); 
-
-    if (token != NULL && strcmp(token, "-p") == 0) {
-        path = strtok(NULL, " ");  // Skip the -p argument and get the actual path
+    if (strncmp(path, "-p", 2) == 0) {
+        // Move the pointer past "-p" and any spaces
+        path += 3; // Skip "-p"
     }
-    // Handle nested directory creation (path contains "/")
-    file *originalActive = (*files)->active;
+    printf("%s\n", path);
 
-    // Handle the case when the path doesn't contain "/"
-    if (strchr(path, '/') == NULL) {
-        // This means it's just a single directory name
-        file *existingDir = searchFile((*files)->active, path);
-        if (existingDir == NULL) {
-            originalActive->numChild++;
-            insertFile((*files)->active, path, 1, NULL);  // '1' indicates it's a directory
-            printf("Created directory: %s in %s\n", path, (*files)->active->name);
-        } 
-    } else {
+    char **storePaths = makeCharArray2D(256, 256);
+    int pathTotal = 0;
 
-        // Handle nested directory creation (path contains "/")
-        token = strtok(path, "/");  // Tokenize the path by "/"
-        
+    // Tokenize the string by spaces to get each file path
+    char *token = strtok(path, " "); // Get the first token
+
+    while (token != NULL) {
+        strcpy(storePaths[pathTotal], token);
+        pathTotal++; // Increment the path counter
+
+        // Get the next file path
+        token = strtok(NULL, " "); // Get the next token
+    }
+    
+    pathTotal--;
+    while (pathTotal >= 0) {
+        char *pathPart = storePaths[pathTotal];
+        printf("pathpart: %s\n", pathPart);
+
+        // Process each path as a separate mkdir
+        file *originalActive = (*files)->active;
+        file *current = (*files)->active;
+
+        char *token = strtok(pathPart, "/");  // Tokenize the path by "/"
         while (token != NULL) {
-            // Check if the directory exists in the currentDir
-            file *existingDir = searchFile((*files)->active, token);
+            int found = 0;
+            // Check if the directory exists, if yes, move into it
+            for (int i = 0; i < current->numChild; i++) {
+                if (current->content.children[i] != NULL && strcmp(current->content.children[i]->name, token) == 0) {
+                    current = current->content.children[i];
+                    found = 1;
+                    break;
+                }
+            }
 
-            if (existingDir == NULL) {
-                // If the directory doesn't exist, create it
-                insertFile((*files)->active, token, 1, NULL);  // '1' indicates it's a directory
-                printf("Created directory: %s in %s\n", token, (*files)->active->name);
-            } else {
-                // If the directory exists, move into it and continue
-                (*files)->active = existingDir;
+            // If directory does not exist, create it
+            if (!found) {
+                file *newFile = createFile(token, 1, current, NULL);
+
+                // Insert into parent's children array
+                for (int i = 0; i < 50; i++) {
+                    if (current->content.children[i] == NULL) {
+                        current->content.children[i] = newFile;
+                        current->numChild++;
+                        current = newFile;  // Move to the newly created directory
+                        break;
+                    }
+                }
             }
 
             // Get the next directory in the path
             token = strtok(NULL, "/");
         }
+
+        // Reset the active directory back to the original
+        (*files)->active = originalActive;
+
+        pathTotal--;
     }
-    // Reset the active directory back to the original
-    (*files)->active = originalActive;
+
+    destroyArray2D(storePaths, 256);
 }
 
 void mv(){

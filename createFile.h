@@ -24,9 +24,12 @@ typedef struct fileSys{
 } fileSys;
 
 void safemalloc(size_t n);
+char **makeCharArray2D(int height, int width);
+void destroyArray2D(char **arr, int height);
 fileSys *initFiles();
 file *createFile(char *name, int isDirectory, file *parent, char *data);
 void changeActiveDirectory(fileSys **files, file *newDir);
+int compareFiles(const void *a, const void *b);
 file *searchFile(file *root, char *path);
 void insertFile(file *root, char *path, int isDirectory, char *data);
 void freeFile(file *root);

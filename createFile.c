@@ -9,6 +9,23 @@ void *safeMalloc(size_t n) {
     return p;
 }
 
+// Making 2D array memory for type int
+char **makeCharArray2D(int height, int width) {
+    char **arr = (char **)safeMalloc(height*sizeof(char *));
+        for (int row=0; row < height; row++) {
+            arr[row] = (char *)safeMalloc(width*sizeof(char));
+        }
+    return arr;
+}
+
+// free 2D array
+void destroyArray2D(char **arr, int height) {
+   for (int row=0; row < height; row++) {
+      free(arr[row]);
+   }
+   free(arr);
+}
+
 // create the file system
 fileSys *initFiles(){
     fileSys *files=safeMalloc(sizeof(fileSys));
@@ -27,9 +44,17 @@ fileSys *initFiles(){
 }
 
 void changeActiveDirectory(fileSys **files, file *newDir) {
-    printf("%s\n", (*files)->active->name);
     (*files)->active = newDir;  // This modifies the actual pointer inside fileSys
-    printf("%s\n", (*files)->active->name);
+}
+
+// Comparison function for qsort to sort in ASCII order
+int compareFiles(const void *a, const void *b) {
+    // Cast the void pointers to file pointers
+    file *fileA = *(file **)a;
+    file *fileB = *(file **)b;
+
+    // Compare the names of the files/directories in ASCII order
+    return strcmp(fileA->name, fileB->name);
 }
 
 //function to create files for the trie
@@ -50,17 +75,11 @@ file *createFile(char *name, int isDirectory, file *parent, char *data){
 }
 
 file *searchFile(file *root, char *path) {
-    if (root == NULL) {
-        return NULL;
-    }
-    if(path == NULL){
-        return root;
-    }
+    if (root == NULL) return NULL;
+    if (path == NULL) return root;
 
     // If searching for the root directory
-    if (strcmp(path, "/") == 0) {
-        return root;
-    }
+    if (strcmp(path, "/") == 0) return root;
 
     char pathCopy[256];  // No need for malloc, use a fixed-size array
     strncpy(pathCopy, path, sizeof(path) - 1);  // Copy the commandLine to pathCopy
@@ -113,6 +132,10 @@ void insertFile(file *root, char *path, int isDirectory, char *data) {
     file *parent = searchFile(root, parentPath);
 
     if (parent == NULL || !parent->isDirectory) return;
+
+    for (int i = 0; i < 50; i++) {
+        if(parent->content.children[i] != NULL && strcmp(parent->content.children[i]->name, name) == 0) return;
+    }
 
     // Create the new file or directory
     file *newFile = createFile(name, isDirectory, parent, data);

@@ -51,13 +51,13 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             cat(files, restOfCommand);  // Assuming cat() doesn't need arguments
             break;
         case 4:  // find
-            find();  // Assuming find() doesn't need arguments
+            find((*files)->active, ".");  // Assuming find() doesn't need arguments
             break;
         case 5:  // touch
-            touch();  // Assuming touch() doesn't need arguments
+            touch(files, restOfCommand);  // Assuming touch() doesn't need arguments
             break;
         case 6:  // echo
-            echo();  // Assuming echo() doesn't need arguments
+            echo(files, restOfCommand);  // Assuming echo() doesn't need arguments
             break;
         case 7:  // mkdir
             mkdir(files, restOfCommand);  // Assuming mkdir() doesn't need arguments

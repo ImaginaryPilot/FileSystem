@@ -1,0 +1,5 @@
+mkdir -p studs/ads/hw dir 
+mkdir -p docs a/b/c
+mkdir -p studs/math/ee
+cd /
+find
