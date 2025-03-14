@@ -42,8 +42,19 @@ void cat(file *currentDir, char *path){
     printf("%s\n", newDir->content.data);
 }
 
-void find(){
-    printf("find");
+void find(fileSys *files, file *active, char *path){
+    printf("%s\n");
+    if(active->isDirectory == true){
+        for(int i = 0; i < active->numChild; i++){
+            for(int j = i+1; j <= active->numChild; j++){
+                if(strcmp(active->content.children[i]->name, active->content.children[j]->name)>0){
+                    file *temp = active->content.children[i]
+                    active->content.children[i] = active->content.children[j];
+                    active->content.children[j] = temp;
+                }
+            }
+        }
+    }
 }
 
 void touch(file *currentDir, char *filename) {
