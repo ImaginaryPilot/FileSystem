@@ -1,9 +1,8 @@
 #include <stdlib.h> 
 #include <stdio.h>
 #include <assert.h>
-#include "trie.h"
+#include "createFile.h"
 #include "filesystem.h"
-#include "inode.h"
 
 int getCommandCode(const char *command) {
     if (strcmp(command, "exit") == 0) return 0;
@@ -22,7 +21,7 @@ int getCommandCode(const char *command) {
     return -1;  // Unknown command
 }
 
-void handleCommand(file **currentDir, file *root, char *commandLine, int *inputFlag){
+void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
     char commandCopy[256];  // No need for malloc, use a fixed-size array
     strncpy(commandCopy, commandLine, sizeof(commandCopy) - 1);  // Copy the commandLine to commandCopy
 
@@ -43,13 +42,13 @@ void handleCommand(file **currentDir, file *root, char *commandLine, int *inputF
             (*inputFlag) = 0;
             break;
         case 1:  // ls
-            ls();  // Assuming ls() doesn't need arguments
+            ls((*files)->active);  // Assuming ls() doesn't need arguments
             break;
         case 2:  // cd
-            cd(currentDir, root, restOfCommand);  // Assuming cd() doesn't need arguments
+            cd(files, restOfCommand);  // Assuming cd() doesn't need arguments
             break;
         case 3:  // cat
-            cat();  // Assuming cat() doesn't need arguments
+            cat(files, restOfCommand);  // Assuming cat() doesn't need arguments
             break;
         case 4:  // find
             find();  // Assuming find() doesn't need arguments
@@ -61,7 +60,7 @@ void handleCommand(file **currentDir, file *root, char *commandLine, int *inputF
             echo();  // Assuming echo() doesn't need arguments
             break;
         case 7:  // mkdir
-            mkdir();  // Assuming mkdir() doesn't need arguments
+            mkdir(files, restOfCommand);  // Assuming mkdir() doesn't need arguments
             break;
         case 8:  // mv
             mv();  // Assuming mv() doesn't need arguments
@@ -83,9 +82,8 @@ void handleCommand(file **currentDir, file *root, char *commandLine, int *inputF
 
 int main(int argc, char *argv[]) {
     // Creating a simple file system
-    file *root = createFile("/", 1, NULL, NULL);  // Root directory
+    fileSys *fileSys = initFiles();
     char commandLine[256];
-    file *currentDir = root;  // Start at root
     int inputFlag = 1;
 
     while(inputFlag){
@@ -94,13 +92,16 @@ int main(int argc, char *argv[]) {
         // Remove the trailing newline character
         commandLine[strcspn(commandLine, "\n")] = 0;
 
+        if (commandLine[0] == '\0') {
+            continue;  // Skip empty lines
+        }
+
         // Handle the command
-        handleCommand(&currentDir, root, commandLine, &inputFlag);
+        handleCommand(&fileSys, commandLine, &inputFlag);
     }
 
-    // Print the file system
-    printFileSystem(root, 0);  // Print from the root directory
+    printFileSystem(fileSys->root, 3);
 
-    freeFile(root);
+    freeFile(fileSys->root);
     return 0;
 }

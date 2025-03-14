@@ -2,7 +2,7 @@ CC = gcc
 
 CFLAGS = -O2 -std=c99 -pedantic -Wall -o -lm
 
-main: main.c filesystem.c trie.c inode.c
+main: main.c filesystem.c createFile.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 .PHONY: clean debug-scan

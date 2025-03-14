@@ -8,7 +8,7 @@
 //struct for directory
 typedef struct file {
     char name[60];
-    bool isDirectory;
+    int isDirectory;
     struct file *parent;
     int referenceCount;
     int numChild;
@@ -21,8 +21,15 @@ typedef struct file {
 typedef struct fileSys{
     file *root;
     file *active;
-}fileSys;
+} fileSys;
 
 void safemalloc(size_t n);
-file *initFiles();
+fileSys *initFiles();
+file *createFile(char *name, int isDirectory, file *parent, char *data);
+void changeActiveDirectory(fileSys **files, file *newDir);
+file *searchFile(file *root, char *path);
+void insertFile(file *root, char *path, int isDirectory, char *data);
+void freeFile(file *root);
+void removeFile(file *root, char *path);
+void printFileSystem(file *root, int depth);
 #endif
