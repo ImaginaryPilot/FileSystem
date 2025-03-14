@@ -69,7 +69,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             cp();  // Assuming cp() doesn't need arguments
             break;
         case 10:  // rm
-            rm();  // Assuming rm() doesn't need arguments
+            rm(files, restOfCommand);  // Assuming rm() doesn't need arguments
             break;
         case 11:  // ln
             ln();  // Assuming ln() doesn't need arguments

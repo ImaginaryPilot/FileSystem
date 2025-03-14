@@ -1,5 +1,10 @@
 mkdir -p studs/ads/hw dir 
 mkdir -p docs a/b/c
 mkdir -p studs/math/ee
+touch alpha beta zeta
 cd /
+ls
 find
+rm -r docs
+find
+exit

@@ -69,13 +69,70 @@ void find(file *root, char *path){
 }
 
 void touch(fileSys **files, char *path) {
-    // Handle nested directory creation (path contains "/")
-    file *originalActive = (*files)->active;
-    
-    insertFile((*files)->root, path, 0, NULL);
+    char **storePaths = makeCharArray2D(256, 256);
+    int pathTotal = 0;
 
-    // Reset the active directory back to the original
-    (*files)->active = originalActive;
+    // Tokenize the string by spaces to get each file path
+    char *token = strtok(path, " "); // Get the first token
+
+    while (token != NULL) {
+        strcpy(storePaths[pathTotal], token);
+        pathTotal++; // Increment the path counter
+
+        // Get the next file path
+        token = strtok(NULL, " "); // Get the next token
+    }
+    
+    pathTotal--;
+
+    while(pathTotal >= 0){
+        char *pathPart = storePaths[pathTotal];
+
+        // Handle nested directory creation (path contains "/")
+        file *originalActive = (*files)->active;
+        
+        char *name = strrchr(pathPart, '/');
+        char parentPath[256]; // Temporary buffer for the parent path
+
+        if (name != NULL) {
+            // Temporarily terminate the string to isolate the parent path
+            *name = '\0'; // This modifies the original path
+            name++; // Move past the '/'
+            strncpy(parentPath, pathPart, sizeof(parentPath) - 1); // Copy the parent path
+            parentPath[sizeof(parentPath) - 1] = '\0'; // Ensure null-termination
+        } else {
+            name = pathPart; // No slashes, it is the name itself
+            strcpy(parentPath, ""); // No parent path
+        }
+
+        // Search for the parent directory using the modified path
+        file *parent = searchFile((*files)->root, parentPath);
+
+        if (parent == NULL || !parent->isDirectory) continue;
+
+        for (int i = 0; i < 50; i++) {
+            if(parent->content.children[i] != NULL && strcmp(parent->content.children[i]->name, name) == 0) return;
+        }
+
+        // Create the new file or directory
+        file *newFile = createFile(name, 0, parent, NULL);
+
+        // Insert into parent's children array
+        for (int i = 0; i < 50; i++) {
+            if (parent->content.children[i] == NULL) {
+                parent->content.children[i] = newFile;
+                parent->numChild++;
+                break; // Success
+            }
+        }
+
+        // Reset the active directory back to the original
+        (*files)->active = originalActive;
+
+        pathTotal--;
+    }
+    
+    destroyArray2D(storePaths, 256);
 }
 
 void echo(fileSys **files, char *path){
@@ -90,7 +147,6 @@ void mkdir(fileSys **files, char *path){
         // Move the pointer past "-p" and any spaces
         path += 3; // Skip "-p"
     }
-    printf("%s\n", path);
 
     char **storePaths = makeCharArray2D(256, 256);
     int pathTotal = 0;
@@ -109,7 +165,6 @@ void mkdir(fileSys **files, char *path){
     pathTotal--;
     while (pathTotal >= 0) {
         char *pathPart = storePaths[pathTotal];
-        printf("pathpart: %s\n", pathPart);
 
         // Process each path as a separate mkdir
         file *originalActive = (*files)->active;
@@ -163,8 +218,53 @@ void cp(){
     printf("cp");
 }
 
-void rm(){
-    printf("rm");
+void rm(fileSys **files, char *path){
+    /*
+    if (strncmp(path, "-r", 2) == 0) {
+        // Move the pointer past "-p" and any spaces
+        path += 3; // Skip "-p"
+    }
+
+    char **storePaths = makeCharArray2D(256, 256);
+    int pathTotal = 0;
+
+    // Tokenize the string by spaces to get each file path
+    char *token = strtok(path, " "); // Get the first token
+
+    while (token != NULL) {
+        strcpy(storePaths[pathTotal], token);
+        pathTotal++; // Increment the path counter
+
+        // Get the next file path
+        token = strtok(NULL, " "); // Get the next token
+    }
+    
+    pathTotal--;
+
+    while(pathTotal >= 0){
+        char *pathPart = storePaths[pathTotal];
+
+        // Handle nested directory creation (path contains "/")
+        file *originalActive = (*files)->active;
+
+        // Search for the parent directory using the modified path
+        file *target = searchFile((*files)->root, pathPart);
+
+        printf("%s\n", target->name);
+        printf("%s\n", target->parent->name);
+
+        if (target == NULL) continue;
+
+        target->parent->numChild--;
+        freeFile(target);
+
+        // Reset the active directory back to the original
+        (*files)->active = originalActive;
+
+        pathTotal--;
+    }
+    
+    destroyArray2D(storePaths, 256);*/
 }
 
 void ln(){

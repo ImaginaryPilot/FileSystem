@@ -112,43 +112,6 @@ file *searchFile(file *root, char *path) {
     return current; // Return the found file/directory
 }
 
-//function that inserts an file to the directory using path
-void insertFile(file *root, char *path, int isDirectory, char *data) {
-    char *name = strrchr(path, '/');
-    char parentPath[256]; // Temporary buffer for the parent path
-
-    if (name != NULL) {
-        // Temporarily terminate the string to isolate the parent path
-        *name = '\0'; // This modifies the original path
-        name++; // Move past the '/'
-        strncpy(parentPath, path, sizeof(parentPath) - 1); // Copy the parent path
-        parentPath[sizeof(parentPath) - 1] = '\0'; // Ensure null-termination
-    } else {
-        name = path; // No slashes, it is the name itself
-        strcpy(parentPath, ""); // No parent path
-    }
-
-    // Search for the parent directory using the modified path
-    file *parent = searchFile(root, parentPath);
-
-    if (parent == NULL || !parent->isDirectory) return;
-
-    for (int i = 0; i < 50; i++) {
-        if(parent->content.children[i] != NULL && strcmp(parent->content.children[i]->name, name) == 0) return;
-    }
-
-    // Create the new file or directory
-    file *newFile = createFile(name, isDirectory, parent, data);
-
-    // Insert into parent's children array
-    for (int i = 0; i < 50; i++) {
-        if (parent->content.children[i] == NULL) {
-            parent->content.children[i] = newFile;
-            return; // Success
-        }
-    }
-}
-
 //function to free the trie function
 void freeFile(file *root) {
     if(root == NULL) {
@@ -179,6 +142,7 @@ void removeFile(file *root, char *path){
         for (int i = 0; i < 50; i++) {
             if ((target->parent)->content.children[i] == target) {
                 (target->parent)->content.children[i] = NULL;  // Remove it from the array
+                (target->parent)->numChild--;
                 break;
             }
         }

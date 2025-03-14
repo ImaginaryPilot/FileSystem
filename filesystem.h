@@ -15,7 +15,7 @@ void echo(fileSys **files, char *path);
 void mkdir(fileSys **files, char *path);
 void mv();
 void cp();
-void rm();
+void rm(fileSys **files, char *path);
 void ln();
 
 #endif
