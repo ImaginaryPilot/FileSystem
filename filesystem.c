@@ -30,7 +30,7 @@ void ls(file *active){
     }
     for(int i = 0; i < active->numChild; i++){
         for(int j = i+1; j <= active->numChild; j++){
-            if(strcmp(active->content.children[i]->name, active->content.children[j]->name)>0){
+            if(strcmp(active->content.children[i]->name, active->content.children[j]->name) > 0){
                 file *temp = active->content.children[i]
                 active->content.children[i] = active->content.children[j];
                 active->content.children[j] = temp;
@@ -59,7 +59,13 @@ void find(fileSys *files, file *active, char *path){
                 }
             }
         }
-
+    }
+    for(int i=0; i <= active->numChild; i++){
+        char createPath[256];
+        strcat(createPath, path);
+        strcat(createPath, "/");
+        strcat(createPath, active->content.children[i]->name);
+        find(*files, *active->content.children[i], createPath);
     }
 }
 
