@@ -65,6 +65,7 @@ void find(fileSys **files, file *active, char *path){
     }
     for(int i=0; i <= active->numChild; i++){
         char createPath[256];
+        if(active->content.children[j] == NULL) continue;
         strcat(createPath, path);
         strcat(createPath, "/");
         strcat(createPath, active->content.children[i]->name);
@@ -72,18 +73,26 @@ void find(fileSys **files, file *active, char *path){
     }
 }
 
-void touch() {
-    /*char *token = strtok(filename, " ");  // Get the first filename
-
+void touch(file *active, char *path) {
+    char *token = strtok(filename, " ");  // Get the first filename
     while (token != NULL) {
+        int ok = 0;
+        for(int i = 0; i <= active->numChild; i++){
+            if(active->content.children[i] == token){
+                ok = 1;
+                break;
+            }
+        }
         // Create an empty file in the current directory
-        insertFile(currentDir, token, 0, NULL);
+        if(ok == 0){
+        insertFile(active, token, 0, NULL);
+        }
         token = strtok(NULL, " ");  // Get the next filename
-    }*/
+    }
 }
 
 void echo(){
-    printf("echo");
+
 }
 
 void mkdir(fileSys **files, char *path){
