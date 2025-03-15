@@ -91,7 +91,40 @@ void touch(file *active, char *path) {
     }
 }
 
-void echo(){
+void echo(fileSys **files, file *active char *input){
+    //get string that needs to be put in file
+    char *token = strtok(input, "\"");
+    //if no string return
+    if(token == NULL){
+        return;
+    }
+    //keep string in variable
+    char *content = token;
+    token = strtok(NULL, " ");
+    //check which type of echo we have
+    if(strlen(token) == 1){
+        token = strtok(NULL, " ");
+        if(name == NULL){
+            return;
+        }
+        int ok=-1;
+        for(int i=0; i <= (*files)->active->numChild; i++){
+            if(strcmp((*files)->active->content.children[i]->name, token)==0){
+                ok=i;
+                break;
+            }
+        }
+        if(ok!=-1){
+            token = 
+        }
+        else{
+
+        }
+    }
+    else{
+        //echo >>
+    }
+
 
 }
 
