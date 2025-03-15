@@ -13,7 +13,7 @@ void find(file *root, char* path);
 void touch(fileSys **files, char *path);
 void echo(fileSys **files, char *path);
 void mkdir(fileSys **files, char *path);
-void mv();
+void mv(fileSys **files, char *path);
 void cp();
 void rm(fileSys **files, char *path);
 void ln();

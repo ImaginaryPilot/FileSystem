@@ -1,10 +1,17 @@
 mkdir -p studs/ads/hw dir 
 mkdir -p docs a/b/c
 mkdir -p studs/math/ee
-touch alpha beta zeta
+touch alpha beta zeta docs/omega docs/alpha
 cd /
-ls
+ls .
+cd studs
 find
-rm -r docs
+rm -r studs/math/ee
+mv beta a
+mv docs/omega /
+mv omega a
+mv a/beta /
+cd /
 find
+cat alpha
 exit

@@ -63,7 +63,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             mkdir(files, restOfCommand);  // Assuming mkdir() doesn't need arguments
             break;
         case 8:  // mv
-            mv();  // Assuming mv() doesn't need arguments
+            mv(files, restOfCommand);  // Assuming mv() doesn't need arguments
             break;
         case 9:  // cp
             cp();  // Assuming cp() doesn't need arguments
@@ -103,5 +103,6 @@ int main(int argc, char *argv[]) {
     printFileSystem(fileSys->root, 3);
 
     freeFile(fileSys->root);
+    free(fileSys);
     return 0;
 }

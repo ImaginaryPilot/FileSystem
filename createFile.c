@@ -52,7 +52,6 @@ int compareFiles(const void *a, const void *b) {
     // Cast the void pointers to file pointers
     file *fileA = *(file **)a;
     file *fileB = *(file **)b;
-
     // Compare the names of the files/directories in ASCII order
     return strcmp(fileA->name, fileB->name);
 }
@@ -60,16 +59,27 @@ int compareFiles(const void *a, const void *b) {
 //function to create files for the trie
 file *createFile(char *name, int isDirectory, file *parent, char *data){
     file *newnode = (file *)safeMalloc(sizeof(file));
+    
+    // Initialize all fields of the new node
+    memset(newnode, 0, sizeof(file)); // Clear out the entire struct to avoid uninitialized fields
+
     strcpy(newnode->name, name);
     newnode->isDirectory = isDirectory;
     newnode->parent = parent;
+    newnode->referenceCount = 1;  // Initialize reference count to 1
+    newnode->numChild = 0;        // Initialize child count for directories
 
     if (isDirectory) {
         for (int i = 0; i < 50; i++) {
             newnode->content.children[i] = NULL;
         }
     } else {
-        newnode->content.data = data; // Regular file starts with no content
+        // If it's a regular file, copy the data string
+        if (data) {
+            strcpy(newnode->content.data, data);  // strdup allocates memory and copies the string
+        } else {
+            newnode->content.data = NULL;  // If no data is provided, set it to NULL
+        }
     }
     return newnode;
 }
@@ -82,7 +92,7 @@ file *searchFile(file *root, char *path) {
     if (strcmp(path, "/") == 0) return root;
 
     char pathCopy[256];  // No need for malloc, use a fixed-size array
-    strncpy(pathCopy, path, sizeof(path) - 1);  // Copy the commandLine to pathCopy
+    strncpy(pathCopy, path, sizeof(pathCopy) - 1);  // Copy the commandLine to pathCopy
 
     // Ensure null-termination just in case strncpy doesn't null-terminate
     pathCopy[sizeof(pathCopy) - 1] = '\0';
@@ -121,8 +131,7 @@ void freeFile(file *root) {
         for (int i = 0; i < 50; i++) {
             if (root->content.children[i] != NULL) {
                 freeFile(root->content.children[i]); // Recursively free child
-            } else {
-                break; // No more children to process
+                root->content.children[i] = NULL;  // Ensure pointers are cleared
             }
         }
     }
@@ -133,21 +142,31 @@ void freeFile(file *root) {
 }
 
 void removeFile(file *root, char *path){
-    file *target = searchFile(root, path);
-
+    file *target = root;
+    
     if(target == NULL) return;
 
+    file *parent = target->parent;
+
     // Remove the target file from the parent's children list
-    if(target->parent != NULL){
+    if(parent != NULL){
+        int foundIdx = -1;
         for (int i = 0; i < 50; i++) {
-            if ((target->parent)->content.children[i] == target) {
-                (target->parent)->content.children[i] = NULL;  // Remove it from the array
-                (target->parent)->numChild--;
+            if (parent->content.children[i] == target) {
+                foundIdx = i;
                 break;
             }
         }
-    }
 
+        if (foundIdx != -1) {
+            // Shift all elements left to maintain order
+            for (int i = foundIdx; i < parent->numChild; i++) {
+                parent->content.children[i] = parent->content.children[i + 1];
+            }
+            parent->content.children[parent->numChild - 1] = NULL;  // Clear last slot
+            parent->numChild--;
+        }
+    }
     freeFile(target);
 }
 

@@ -8,6 +8,8 @@ void cd(fileSys **files, char *path){
         return;
     }
 
+    if (strcmp(path, ".") == 0) return;
+
     if (strcmp(path, "..") == 0) {
         // If the user enters "..", go to the parent directory
         if ((*files)->active->parent != NULL) {
@@ -44,8 +46,11 @@ void ls(file *active){
 }
 
 void cat(fileSys **files, char *path){
-    file *newDir = searchFile((*files)->active, path);
-    printf("%s\n", newDir->content.data);
+    if(path != NULL){
+        file *newDir = searchFile((*files)->root, path);
+        if(newDir == NULL) return;
+        printf("%s\n", newDir->content.data);
+    }
 }
 
 void find(file *root, char *path){
@@ -210,8 +215,84 @@ void mkdir(fileSys **files, char *path){
     destroyArray2D(storePaths, 256);
 }
 
-void mv(){
-    printf("mv");
+void mv(fileSys **files, char *path){
+    char **storePaths = makeCharArray2D(2, 256);
+    int pathIdx = 0;
+
+    // Tokenize the string by spaces to get each file path
+    char *token = strtok(path, " "); // Get the first token
+
+    while (token != NULL) {
+        strcpy(storePaths[pathIdx], token);
+        pathIdx++; // Increment the path counter
+
+        // Get the next file path
+        token = strtok(NULL, " "); // Get the next token
+    }
+    
+    pathIdx = 0;
+
+    // Handle nested directory creation (path contains "/")
+    file *originalActive = (*files)->active;
+
+    char sourcePath[256];
+    char destPath[256];
+    strcpy(sourcePath, storePaths[0]);
+    strcpy(destPath, storePaths[1]);
+
+    // Search for the parent directory using the modified path
+    file *sourceFile = searchFile((*files)->root, storePaths[0]);
+    file *destDir = searchFile((*files)->root, storePaths[1]);
+    file *parent = sourceFile->parent;
+    
+    if(!sourceFile->isDirectory){
+        int exists = 0;
+        for(int i = 0; i < destDir->numChild; i++){
+            if (strcmp(destDir->content.children[i]->name, sourceFile->name) == 0) {
+                char fullPath[400];  // Create a temporary buffer
+                snprintf(fullPath, sizeof(fullPath), "%s/%s", destPath, destDir->content.children[i]->name);
+
+                exists = 1;
+                removeFile(destDir->content.children[i], fullPath);
+                printf("first free");
+                destDir->content.children[i] = sourceFile;
+                break;
+            }
+        }
+        if(!exists){
+            for (int i = 0; i < 50; i++) {
+                if (destDir->content.children[i] == NULL) {
+                    destDir->content.children[i] = sourceFile;
+                    sourceFile->parent = destDir;
+                    destDir->numChild++;
+                    break;
+                }
+            }
+        }
+
+        printf("%s\n", parent->name);
+        printf("%s\n\n", sourceFile->name);
+        int foundIdx = -1;
+        for(int i = 0; i < parent->numChild; i++){
+            if(parent->content.children[i] == sourceFile){
+                foundIdx = i;
+                break;
+            }
+        }
+        if(foundIdx != -1){
+            // Shift all elements left to maintain order
+            for (int i = foundIdx; i < parent->numChild - 1; i++) {
+                parent->content.children[i] = parent->content.children[i + 1];
+            }
+            parent->content.children[parent->numChild - 1] = NULL;  // Clear last slot
+            parent->numChild--;
+        }
+    }
+    
+    // Reset the active directory back to the original
+    (*files)->active = originalActive;
+
+    destroyArray2D(storePaths, 2);
 }
 
 void cp(){
@@ -219,7 +300,6 @@ void cp(){
 }
 
 void rm(fileSys **files, char *path){
-    /*
     if (strncmp(path, "-r", 2) == 0) {
         // Move the pointer past "-p" and any spaces
         path += 3; // Skip "-p"
@@ -250,13 +330,12 @@ void rm(fileSys **files, char *path){
         // Search for the parent directory using the modified path
         file *target = searchFile((*files)->root, pathPart);
 
-        printf("%s\n", target->name);
-        printf("%s\n", target->parent->name);
+        if (target == NULL) {
+            pathTotal--;
+            continue;  // Skip this entry if the file is not found
+        }
 
-        if (target == NULL) continue;
-
-        target->parent->numChild--;
-        freeFile(target);
+        removeFile(target, pathPart);
 
         // Reset the active directory back to the original
         (*files)->active = originalActive;
@@ -264,7 +343,7 @@ void rm(fileSys **files, char *path){
         pathTotal--;
     }
     
-    destroyArray2D(storePaths, 256);*/
+    destroyArray2D(storePaths, 256);
 }
 
 void ln(){
