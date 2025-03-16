@@ -14,7 +14,7 @@ typedef struct file {
     int numChild;
     union {
         struct file *children[50]; // For directories: array of child pointers
-        char *data; // For regular files: stores file content (ASCII string)
+        char data[256]; // For regular files: stores file content (ASCII string)
     } content;
 } file;
 
@@ -23,7 +23,7 @@ typedef struct fileSys{
     file *active;
 } fileSys;
 
-void safemalloc(size_t n);
+void *safeMalloc(size_t n);
 char **makeCharArray2D(int height, int width);
 void destroyArray2D(char **arr, int height);
 fileSys *initFiles();

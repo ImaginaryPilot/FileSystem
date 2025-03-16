@@ -1,4 +1,4 @@
-mkdir -p studs/ads/hw dir 
+mkdir -p studs/ads/hw dir/temp
 mkdir -p docs a/b/c
 mkdir -p studs/math/ee
 touch alpha beta zeta docs/omega docs/alpha
@@ -7,11 +7,15 @@ ls .
 cd studs
 find
 rm -r studs/math/ee
-mv beta a
-mv docs/omega /
-mv omega a
-mv a/beta /
+mv alpha epsilon
+mv zeta docs/alpha
+mv dir docs
+mv docs/dir /
 cd /
 find
-cat alpha
+echo "help radu" > epsilon 
+cat epsilon
+echo ", he's not doing well" >> epsilon
+cat epsilon
+echo "kailu" > dir/temp/delta
 exit

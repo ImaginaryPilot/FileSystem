@@ -7,15 +7,15 @@
 #include "createFile.h"
 
 void cd(fileSys **files, char *path);
-void ls(file *active);
+void ls(fileSys **files, char* path);
 void cat(fileSys **files, char *path);
 void find(file *root, char* path);
 void touch(fileSys **files, char *path);
-void echo(fileSys **files, char *path);
+void echo(fileSys **files, char *input);
 void mkdir(fileSys **files, char *path);
 void mv(fileSys **files, char *path);
 void cp();
 void rm(fileSys **files, char *path);
-void ln();
+void ln(fileSys **fs, char *input);
 
 #endif

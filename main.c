@@ -42,7 +42,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             (*inputFlag) = 0;
             break;
         case 1:  // ls
-            ls((*files)->active);  // Assuming ls() doesn't need arguments
+            ls(files, restOfCommand);  // Assuming ls() doesn't need arguments
             break;
         case 2:  // cd
             cd(files, restOfCommand);  // Assuming cd() doesn't need arguments
@@ -72,7 +72,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             rm(files, restOfCommand);  // Assuming rm() doesn't need arguments
             break;
         case 11:  // ln
-            ln();  // Assuming ln() doesn't need arguments
+            ln(files, restOfCommand);  // Assuming ln() doesn't need arguments
             break;
         default:
             printf("Unknown command: %s\n", token);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         handleCommand(&fileSys, commandLine, &inputFlag);
     }
 
-    printFileSystem(fileSys->root, 3);
+    // printFileSystem(fileSys->root, 3);
 
     freeFile(fileSys->root);
     free(fileSys);

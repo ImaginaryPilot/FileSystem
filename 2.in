@@ -1,0 +1,14 @@
+echo "This test case aims to clarify the mv command." > info
+touch a
+ls
+mv a b
+ls
+mkdir -p dir1/dir2/dir3 dirA/dirB
+ls
+mv dir1 dirI
+ls
+mv dirI/dir2 dirII
+ls dirI
+ls dirII
+ls .
+exit

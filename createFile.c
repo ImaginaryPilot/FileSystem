@@ -64,6 +64,7 @@ file *createFile(char *name, int isDirectory, file *parent, char *data){
     memset(newnode, 0, sizeof(file)); // Clear out the entire struct to avoid uninitialized fields
 
     strcpy(newnode->name, name);
+    newnode->name[sizeof(newnode->name) - 1] = '\0';
     newnode->isDirectory = isDirectory;
     newnode->parent = parent;
     newnode->referenceCount = 1;  // Initialize reference count to 1
@@ -74,11 +75,13 @@ file *createFile(char *name, int isDirectory, file *parent, char *data){
             newnode->content.children[i] = NULL;
         }
     } else {
-        // If it's a regular file, copy the data string
-        if (data) {
-            strcpy(newnode->content.data, data);  // strdup allocates memory and copies the string
+        // If it's a regular file, copy the data string if data is not NULL
+        if (data != NULL) {
+            // Ensure the string does not overflow the data buffer
+            strncpy(newnode->content.data, data, sizeof(newnode->content.data) - 1);
+            newnode->content.data[sizeof(newnode->content.data) - 1] = '\0';  // Null-terminate to prevent overflow
         } else {
-            newnode->content.data = NULL;  // If no data is provided, set it to NULL
+            newnode->content.data[0] = '\0';  // Make sure the data is an empty string if no data is provided
         }
     }
     return newnode;
@@ -102,6 +105,16 @@ file *searchFile(file *root, char *path) {
     while (token != NULL) {
         if (!current->isDirectory) { // If it's a regular file, we can't go deeper
             return NULL;
+        }
+        if (strcmp(token, ".") == 0) {
+            token = strtok(NULL, "/");
+            continue;
+        }
+
+        if (strcmp(token, "..") == 0) {
+            current = current->parent;
+            token = strtok(NULL, "/");
+            continue;
         }
 
         int found = 0;
@@ -134,9 +147,6 @@ void freeFile(file *root) {
                 root->content.children[i] = NULL;  // Ensure pointers are cleared
             }
         }
-    }
-    else {
-        free(root->content.data);
     }
     free(root);
 }
@@ -191,6 +201,10 @@ void printFileSystem(file *root, int depth) {
             }
         }
     } else {
-        printf("[File] %s: %s\n", root->name, root->content.data ? root->content.data : "No data");  // Print file name and content
+        if (root->content.data[0] == '\0') {
+            printf("[File] %s: No data\n", root->name);
+        } else {
+            printf("[File] %s: %s\n", root->name, root->content.data);
+        }
     }
 }
