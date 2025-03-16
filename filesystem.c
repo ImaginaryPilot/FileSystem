@@ -25,8 +25,7 @@ void cd(fileSys **files, char *path){
 }
 
 void ls(file *active){
-    if(active->isDirectory == 0  || active->numChild == 0) {
-        printf("return\n");
+    if(active->isDirectory == false  || active->numChild == 0) {
         return;
     }
     for(int i = 0; i < active->numChild; i++){
@@ -49,27 +48,23 @@ void cat(fileSys **files, char *path){
     printf("%s\n", newDir->content.data);
 }
 
-void find(fileSys **files, file *active, char *path){
+void find(file *root, char *path){
+    if (root == NULL) return;
+
     printf("%s\n", path);
-    if(active->isDirectory == 1){
-        for(int i = 0; i < active->numChild; i++){
-            for(int j = i+1; j <= active->numChild; j++){
-                if(active->content.children[j] == NULL) continue;
-                if(strcmp(active->content.children[i]->name, active->content.children[j]->name)>0){
-                    file *temp = active->content.children[i];
-                    active->content.children[i] = active->content.children[j];
-                    active->content.children[j] = temp;
-                }
-            }
+    
+    if(root->isDirectory){
+        // Sort the children in ASCII order
+        qsort(root->content.children, root->numChild, sizeof(file *), compareFiles);
+
+        for(int i = 0; i < root->numChild; i++){
+            if(root->content.children[i] == NULL) continue;
+
+            char newPath[256];
+            snprintf(newPath, sizeof(newPath), "%s/%s", path, root->content.children[i]->name);
+
+            find(root->content.children[i], newPath);
         }
-    }
-    for(int i=0; i <= active->numChild; i++){
-        char createPath[256];
-        if(active->content.children[j] == NULL) continue;
-        strcat(createPath, path);
-        strcat(createPath, "/");
-        strcat(createPath, active->content.children[i]->name);
-        find(files, active->content.children[i], createPath);
     }
 }
 
