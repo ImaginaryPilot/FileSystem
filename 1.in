@@ -8,14 +8,8 @@ cd studs
 find
 rm -r studs/math/ee
 mv alpha epsilon
-mv zeta docs/alpha
-mv dir docs
-mv docs/dir /
+mv dir dirI
 cd /
 find
-echo "help radu" > epsilon 
-cat epsilon
-echo ", he's not doing well" >> epsilon
-cat epsilon
-echo "kailu" > dir/temp/delta
+ln epsilon beta
 exit

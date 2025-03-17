@@ -66,7 +66,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
             mv(files, restOfCommand);  // Assuming mv() doesn't need arguments
             break;
         case 9:  // cp
-            cp();  // Assuming cp() doesn't need arguments
+            cp(files, restOfCommand);  // Assuming cp() doesn't need arguments
             break;
         case 10:  // rm
             rm(files, restOfCommand);  // Assuming rm() doesn't need arguments
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         handleCommand(&fileSys, commandLine, &inputFlag);
     }
 
-    // printFileSystem(fileSys->root, 3);
+    printFileSystem(fileSys->root, 3);
 
     freeFile(fileSys->root);
     free(fileSys);

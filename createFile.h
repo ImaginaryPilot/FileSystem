@@ -32,6 +32,7 @@ void changeActiveDirectory(fileSys **files, file *newDir);
 int compareFiles(const void *a, const void *b);
 file *searchFile(file *root, char *path);
 void freeFile(file *root);
+void copyDirectory(file *source, file *destination);
 void removeFile(file *root, char *path);
 void printFileSystem(file *root, int depth);
 #endif

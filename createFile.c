@@ -151,6 +151,16 @@ void freeFile(file *root) {
     free(root);
 }
 
+void copyDirectory(file *source, file *destination){
+    for(int i=0; i < source->numChild; i++){
+        file *children = createFile(source->content.children[i]->name, source->isDirectory, destination, source->content.data);
+        destination->numChild++;
+        if(children->isDirectory == 1){
+            copyDirectory(source->content.children[i], children);
+        }
+    }
+}
+
 void removeFile(file *root, char *path){
     file *target = root;
     

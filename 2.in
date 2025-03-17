@@ -1,14 +1,38 @@
-echo "This test case aims to clarify the mv command." > info
-touch a
+echo "This test case illustrates the ln command." > info1.txt
+ln info1.txt info2.txt
+echo "We modify the content of info1.txt through info2.txt." > info2.txt
+cat info1.txt
+ln info1.txt info3.txt
+mkdir -p links
+ln info3.txt links/info4.txt
+ln links/info4.txt info5.txt
+echo "Now info1-5.txt are hard linked." > info6.txt
+ln info6.txt info7.txt
+cat info1.txt
+cat info2.txt
+cat info3.txt
+cat links/info4.txt
+cat info5.txt
+cat info6.txt
+cat info7.txt
+echo "overwrite" > links/info4.txt
+cd links
+cat ../info3.txt
+cat ../info6.txt
+echo "this text is appended" >> ../info6.txt
+cat ../info7.txt
+cat ../info2.txt
+cat info4.txt
+cd
+echo "an inode is only removed when all its references are gone." > info6.txt
+rm -r info6.txt links
 ls
-mv a b
+cat info7.txt
+rm info7.txt
 ls
-mkdir -p dir1/dir2/dir3 dirA/dirB
+rm info1.txt info3.txt
 ls
-mv dir1 dirI
-ls
-mv dirI/dir2 dirII
-ls dirI
-ls dirII
-ls .
+echo "text written to info2.txt just before it is removed" > info2.txt
+rm info2.txt
+cat info5.txt
 exit
