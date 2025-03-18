@@ -33,9 +33,9 @@ fileSys *initFiles(){
     strcpy(root->name,"/");
     root->isDirectory = 1;
     root->parent = root;
-    root->referenceCount = 1;
     root->numChild = 0;
-    for(int i = 0; i < 50; i++){
+    root->inode = NULL;
+    for(int i = 0; i < 256; i++){
         root->content.children[i] = NULL;
     }
     files->root = root;
@@ -57,21 +57,49 @@ int compareFiles(const void *a, const void *b) {
 }
 
 //function to create files for the trie
-file *createFile(char *name, int isDirectory, file *parent, char *data){
+file *createFile(char *name, int isDirectory, file *parent, char *data, inode *inodeRef){
     file *newnode = (file *)safeMalloc(sizeof(file));
+    inode *newInode = (inode *)safeMalloc(sizeof(inode));
     
     // Initialize all fields of the new node
     memset(newnode, 0, sizeof(file)); // Clear out the entire struct to avoid uninitialized fields
+    memset(newInode, 0, sizeof(inode)); // Clear out the entire struct to avoid uninitialized fields
 
     strcpy(newnode->name, name);
     newnode->name[sizeof(newnode->name) - 1] = '\0';
     newnode->isDirectory = isDirectory;
     newnode->parent = parent;
-    newnode->referenceCount = 1;  // Initialize reference count to 1
+    if(inodeRef == NULL){
+        newnode->inode = newInode;
+        if (data != NULL) {
+            // Ensure the string does not overflow the data buffer
+            strncpy(newnode->inode->data, data, sizeof(newnode->inode->data) - 1);
+            newnode->inode->data[sizeof(newnode->inode->data) - 1] = '\0';
+        } else {
+            newnode->inode->data[0] = '\0';  // Make sure the data is an empty string if no data is provided
+        }
+        for (int i = 0; i < 256; i++) {
+            newnode->inode->links[i] = NULL;
+        }
+        newnode->inode->links[0] = newnode;
+        newnode->inode->referenceCount++;
+    }
+    else{
+        free(newInode);
+        newnode->inode = inodeRef;
+        for(int i=0; i<256; i++){
+            if(newnode->inode->links[i] == NULL){
+                newnode->inode->links[i] = newnode;
+                newnode->inode->referenceCount++;
+                break;
+            }
+        }
+    }
     newnode->numChild = 0;        // Initialize child count for directories
 
+    
     if (isDirectory) {
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             newnode->content.children[i] = NULL;
         }
     } else {
@@ -87,7 +115,7 @@ file *createFile(char *name, int isDirectory, file *parent, char *data){
     return newnode;
 }
 
-file *searchFile(file *root, char *path) {
+file *searchFile(fileSys **files, file *root, char *path) {
     if (root == NULL) return NULL;
     if (path == NULL) return root;
 
@@ -97,10 +125,12 @@ file *searchFile(file *root, char *path) {
     char pathCopy[256];  // No need for malloc, use a fixed-size array
     strncpy(pathCopy, path, sizeof(pathCopy) - 1);  // Copy the commandLine to pathCopy
 
+    int isAbsolutePath = (path[0] == '/');
+
     // Ensure null-termination just in case strncpy doesn't null-terminate
     pathCopy[sizeof(pathCopy) - 1] = '\0';
     char *token = strtok(pathCopy, "/"); // Tokenize by "/"
-    file *current = root;
+    file *current = isAbsolutePath ? (*files)->root : root;
     
     while (token != NULL) {
         if (!current->isDirectory) { // If it's a regular file, we can't go deeper
@@ -118,7 +148,7 @@ file *searchFile(file *root, char *path) {
         }
 
         int found = 0;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (current->content.children[i] != NULL && strcmp(current->content.children[i]->name, token) == 0) {
                 current = current->content.children[i];
                 found = 1;
@@ -141,22 +171,53 @@ void freeFile(file *root) {
         return;
     }
     if(root->isDirectory){
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (root->content.children[i] != NULL) {
                 freeFile(root->content.children[i]); // Recursively free child
                 root->content.children[i] = NULL;  // Ensure pointers are cleared
             }
         }
     }
+
+    // Decrement the reference count of the inode
+    if (root->inode != NULL) {
+        int foundIdx = -1;
+        for (int i = 0; i < 256; i++) {
+            if (root->inode->links[i] == root) {
+                foundIdx = i;
+                break;
+            }
+        }
+
+        if (foundIdx != -1) {
+            // Shift all elements left to maintain order
+            for (int i = foundIdx; i < root->inode->referenceCount; i++) {
+                root->inode->links[i] = root->inode->links[i + 1];
+            }
+            root->inode->links[root->inode->referenceCount - 1] = NULL;  // Clear last slot
+            root->inode->referenceCount--;
+        }
+        // If the reference count is now 0, free the inode
+        if (root->inode->referenceCount == 0) {
+            free(root->inode);
+        }
+    }
+
     free(root);
 }
 
 void copyDirectory(file *source, file *destination){
     for(int i=0; i < source->numChild; i++){
-        file *children = createFile(source->content.children[i]->name, source->isDirectory, destination, source->content.data);
-        destination->numChild++;
-        if(children->isDirectory == 1){
-            copyDirectory(source->content.children[i], children);
+        file *child = createFile(source->content.children[i]->name, source->content.children[i]->isDirectory, destination, source->content.children[i]->content.data, NULL);
+        for (int i = 0; i < 50; i++) {
+            if (destination->content.children[i] == NULL) {
+                destination->content.children[i] = child;
+                destination->numChild++;
+                break; 
+            }
+        }
+        if(child->isDirectory == 1){
+            copyDirectory(source->content.children[i], child);
         }
     }
 }
@@ -171,7 +232,7 @@ void removeFile(file *root, char *path){
     // Remove the target file from the parent's children list
     if(parent != NULL){
         int foundIdx = -1;
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (parent->content.children[i] == target) {
                 foundIdx = i;
                 break;
@@ -187,34 +248,6 @@ void removeFile(file *root, char *path){
             parent->numChild--;
         }
     }
+
     freeFile(target);
-}
-
-void printFileSystem(file *root, int depth) {
-    if (root == NULL) {
-        return;  // Base case: nothing to print
-    }
-
-    // Indentation based on depth
-    for (int i = 0; i < depth; i++) {
-        printf("  ");  // Two spaces for each level of depth
-    }
-
-    if (root->isDirectory) {
-        printf("[Directory] %s\n", root->name);  // Print the directory name
-        // Recursively print the contents of the directory
-        for (int i = 0; i < 50; i++) {
-            if (root->content.children[i] != NULL) {
-                printFileSystem(root->content.children[i], depth + 1);  // Recursive call for subdirectories or files
-            } else {
-                break;  // No more children to process
-            }
-        }
-    } else {
-        if (root->content.data[0] == '\0') {
-            printf("[File] %s: No data\n", root->name);
-        } else {
-            printf("[File] %s: %s\n", root->name, root->content.data);
-        }
-    }
 }

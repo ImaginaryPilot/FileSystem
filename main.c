@@ -22,7 +22,7 @@ int getCommandCode(const char *command) {
 }
 
 void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
-    char commandCopy[256];  // No need for malloc, use a fixed-size array
+    char commandCopy[1024];  // No need for malloc, use a fixed-size array
     strncpy(commandCopy, commandLine, sizeof(commandCopy) - 1);  // Copy the commandLine to commandCopy
 
     // Ensure null-termination just in case strncpy doesn't null-terminate
@@ -83,7 +83,7 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
 int main(int argc, char *argv[]) {
     // Creating a simple file system
     fileSys *fileSys = initFiles();
-    char commandLine[256];
+    char commandLine[1024];
     int inputFlag = 1;
 
     while(inputFlag){
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         handleCommand(&fileSys, commandLine, &inputFlag);
     }
 
-    printFileSystem(fileSys->root, 3);
+    // printFileSystem(fileSys->root, 0);
 
     freeFile(fileSys->root);
     free(fileSys);

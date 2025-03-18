@@ -19,7 +19,7 @@ void cd(fileSys **files, char *path){
     }
 
     // Try to find the directory by using searchFile
-    file *newDir = searchFile((*files)->active, path);
+    file *newDir = searchFile(files, (*files)->active, path);
     if (newDir != NULL && newDir->isDirectory) {
         // If the directory exists and it's a directory, change the currentDir
         changeActiveDirectory(files, newDir);
@@ -32,7 +32,7 @@ void ls(fileSys **files, char* path){
         active = (*files)->active;
     }
     else {
-        active = searchFile((*files)->root, path);
+        active = searchFile(files, (*files)->root, path);
     }
     
     if(active->isDirectory == 0  || active->numChild == 0) {
@@ -55,7 +55,7 @@ void ls(fileSys **files, char* path){
 
 void cat(fileSys **files, char *path){
     if(path != NULL){
-        file *newDir = searchFile((*files)->root, path);
+        file *newDir = searchFile(files, (*files)->active, path);
         if(newDir == NULL || newDir->isDirectory || newDir->content.data[0] == '\0') return;
         printf("%s\n", newDir->content.data);
     }
@@ -73,7 +73,7 @@ void find(file *root, char *path){
         for(int i = 0; i < root->numChild; i++){
             if(root->content.children[i] == NULL) continue;
 
-            char newPath[256];
+            char newPath[1024];
             snprintf(newPath, sizeof(newPath), "%s/%s", path, root->content.children[i]->name);
 
             find(root->content.children[i], newPath);
@@ -82,7 +82,7 @@ void find(file *root, char *path){
 }
 
 void touch(fileSys **files, char *path) {
-    char **storePaths = makeCharArray2D(256, 256);
+    char **storePaths = makeCharArray2D(256, 1024);
     int pathTotal = 0;
 
     // Tokenize the string by spaces to get each file path
@@ -105,7 +105,7 @@ void touch(fileSys **files, char *path) {
         file *originalActive = (*files)->active;
         
         char *name = strrchr(pathPart, '/');
-        char parentPath[256]; // Temporary buffer for the parent path
+        char parentPath[1024]; // Temporary buffer for the parent path
 
         if (name != NULL) {
             // Temporarily terminate the string to isolate the parent path
@@ -119,26 +119,19 @@ void touch(fileSys **files, char *path) {
         }
 
         // Search for the parent directory using the modified path
-        file *parent = searchFile((*files)->root, parentPath);
+        file *parent = searchFile(files, (*files)->root, parentPath);
 
         if (parent == NULL || !parent->isDirectory) continue;
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if(parent->content.children[i] != NULL && strcmp(parent->content.children[i]->name, name) == 0) return;
         }
 
-        for (int i = 0; i < sizeof(name); i++) {
-            if (name[i] == '\0') {
-                printf("name has a null character at position %d\n", i);
-                break;
-            }
-        }
-
         // Create the new file or directory
-        file *newFile = createFile(name, 0, parent, NULL);
+        file *newFile = createFile(name, 0, parent, NULL, NULL);
 
         // Insert into parent's children array
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (parent->content.children[i] == NULL) {
                 parent->content.children[i] = newFile;
                 parent->numChild++;
@@ -158,7 +151,7 @@ void touch(fileSys **files, char *path) {
 void echo(fileSys **files, char *input){
     char *ptr1 = input; // Pointer to the start of the input
     char *ptr2; // Pointer to the delimiter
-    char cont[256];
+    char cont[1024];
 
     // Loop to find and process each segment separated by ""
     while ((ptr2 = strchr(ptr1, '\"')) != NULL) {
@@ -184,7 +177,7 @@ void echo(fileSys **files, char *input){
     file *originalActive = (*files)->active;
     
     char *name = strrchr(token, '/');
-    char parentPath[256]; // Temporary buffer for the parent path
+    char parentPath[1024]; // Temporary buffer for the parent path
 
     if (name != NULL) {
         // Temporarily terminate the string to isolate the parent path
@@ -197,7 +190,7 @@ void echo(fileSys **files, char *input){
         strcpy(parentPath, ""); // No parent path
     }
 
-    file *srcParent = searchFile((*files)->root, parentPath);
+    file *srcParent = searchFile(files, (*files)->active, parentPath);
 
     int ok = -1;
     for(int i=0; i < srcParent->numChild; i++){
@@ -219,11 +212,15 @@ void echo(fileSys **files, char *input){
                 strcat(target->content.data, cont);
             }
         }
+        for(int i = 0; i < target->inode->referenceCount; i++){
+            if(target->inode->links[i] == NULL || target->inode->links[i] == target) continue;
+            strcpy(target->inode->links[i]->content.data, target->content.data);
+        }
     }
     else{
-        file *newFile = createFile(name, 0, srcParent, cont);
+        file *newFile = createFile(name, 0, srcParent, cont, NULL);
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (srcParent->content.children[i] == NULL) {
                 srcParent->content.children[i] = newFile;
                 srcParent->numChild++;
@@ -240,7 +237,7 @@ void mkdir(fileSys **files, char *path){
         path += 3; // Skip "-p"
     }
 
-    char **storePaths = makeCharArray2D(256, 256);
+    char **storePaths = makeCharArray2D(256, 1024);
     int pathTotal = 0;
 
     // Tokenize the string by spaces to get each file path
@@ -276,10 +273,10 @@ void mkdir(fileSys **files, char *path){
 
             // If directory does not exist, create it
             if (!found) {
-                file *newFile = createFile(token, 1, current, NULL);
+                file *newFile = createFile(token, 1, current, NULL, NULL);
 
                 // Insert into parent's children array
-                for (int i = 0; i < 50; i++) {
+                for (int i = 0; i < 256; i++) {
                     if (current->content.children[i] == NULL) {
                         current->content.children[i] = newFile;
                         current->numChild++;
@@ -303,7 +300,7 @@ void mkdir(fileSys **files, char *path){
 }
 
 void mv(fileSys **files, char *path){
-    char **storePaths = makeCharArray2D(2, 256);
+    char **storePaths = makeCharArray2D(2, 1024);
     int pathIdx = 0;
 
     // Tokenize the string by spaces to get each file path
@@ -322,9 +319,9 @@ void mv(fileSys **files, char *path){
     // Handle nested directory creation (path contains "/")
     file *originalActive = (*files)->active;
 
-    char sourcePath[256];
-    char destDirPath[256];
-    char destFilePath[256];
+    char sourcePath[1024];
+    char destDirPath[1024];
+    char destFilePath[1024];
     strcpy(sourcePath, storePaths[0]);
     strcpy(destFilePath, storePaths[1]);
     char *destName = strrchr(storePaths[1], '/');
@@ -341,17 +338,17 @@ void mv(fileSys **files, char *path){
     }
 
     // Search for the parent directory using the modified path
-    file *sourceFile = searchFile((*files)->root, storePaths[0]);
+    file *sourceFile = searchFile(files, (*files)->root, storePaths[0]);
     file *srcParent = sourceFile->parent;
     
     if(!sourceFile->isDirectory){
-        file *destDir = searchFile((*files)->root, destDirPath);
-        file *destFile = searchFile((*files)->root, destFilePath);
+        file *destDir = searchFile(files, (*files)->root, destDirPath);
+        file *destFile = searchFile(files, (*files)->root, destFilePath);
         
         int exists = (destFile == NULL) ? 0 : 1;
         
         if(!exists){
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 256; i++) {
                 if (destDir->content.children[i] == NULL) {
                     strcpy(sourceFile->name, destName);
                     destDir->content.children[i] = sourceFile;
@@ -391,10 +388,10 @@ void mv(fileSys **files, char *path){
         }
     }
     else {
-        file* destDir = searchFile((*files)->root, destDirPath);
+        file* destDir = searchFile(files, (*files)->root, destDirPath);
         strcpy(sourceFile->name, destName);
         
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 256; i++) {
             if (destDir->content.children[i] == NULL) {
                 destDir->content.children[i] = sourceFile;
                 sourceFile->parent = destDir;
@@ -430,7 +427,7 @@ void cp(fileSys **files, char *path){
     int recursive = 0;
     if (strncmp(path, "-r", 2) == 0) {
         // Move the pointer past "-r" and any spaces
-        path += 3; // Skip "-p"
+        path += 3; // Skip "-r"
         recursive = 1;
     }
     char *path1 = strtok(path, " ");
@@ -453,8 +450,8 @@ void cp(fileSys **files, char *path){
         name = path2; // No slashes, it is the name itself
         strcpy(parentPath, ""); // No parent path
     }
-    file *source = searchFile((*files)->root, path1);
-    file *parent = searchFile((*files)->root, parentPath);
+    file *source = searchFile(files, (*files)->root, path1);
+    file *parent = searchFile(files, (*files)->root, parentPath);
     if(source == NULL || parent == NULL){
         return;
     }
@@ -462,21 +459,42 @@ void cp(fileSys **files, char *path){
         int ok = -1;
         for(int i = 0; i < parent->numChild; i++){
             if(strcmp(parent->content.children[i]->name, name) == 0){
-                strcpy(parent->content.children[i]->content.data, source->content.data);
-                // strcpy(parent->content.children[i]->name, source->name);
-                ok = 1;
-                break;
+                if(source->content.data[0] !='\0'){
+                    strcpy(parent->content.children[i]->content.data, source->content.data);
+                }
+                else {
+                    parent->content.children[i]->content.data[sizeof(parent->content.children[i]->content.data) - 1] = '\0';  // Null-terminate to prevent overflow
+                } 
+                ok = i;
+                break;  
             }
         }
         if(ok == -1){
-            file *newFile = createFile(name, 0, parent, NULL);
-            strcpy(newFile->content.data, source->content.data);
-            // strcpy(newFile->name, source->name);
-            newFile->numChild = source->numChild;
+            file *newFile = createFile(name, 0, parent, NULL, NULL);
+            for (int i = 0; i < 50; i++) {
+                if (parent->content.children[i] == NULL) {
+                    parent->content.children[i] = newFile;
+                    parent->numChild++;
+                    break; // Success
+                }
+            }
+            if(source->content.data[0] !='\0'){
+                strcpy(newFile->content.data, source->content.data);
+            }
+            else {
+                newFile->content.data[sizeof(newFile->content.data) - 1] = '\0';  // Null-terminate to prevent overflow
+            } 
         }
     }
     else{
-        file *newDirectory = createFile(name, 1, parent, NULL);
+        file *newDirectory = createFile(name, 1, parent, NULL, NULL);
+        for (int i = 0; i < 50; i++) {
+            if (parent->content.children[i] == NULL) {
+                parent->content.children[i] = newDirectory;
+                parent->numChild++;
+                break; 
+            }
+        }
         copyDirectory(source, newDirectory);
     } 
 }
@@ -487,7 +505,7 @@ void rm(fileSys **files, char *path){
         path += 3; // Skip "-r"
     }
 
-    char **storePaths = makeCharArray2D(256, 256);
+    char **storePaths = makeCharArray2D(256, 1024);
     int pathTotal = 0;
 
     // Tokenize the string by spaces to get each file path
@@ -510,7 +528,7 @@ void rm(fileSys **files, char *path){
         file *originalActive = (*files)->active;
 
         // Search for the parent directory using the modified path
-        file *target = searchFile((*files)->root, pathPart);
+        file *target = searchFile(files, (*files)->root, pathPart);
 
         if (target == NULL) {
             pathTotal--;
@@ -529,7 +547,7 @@ void rm(fileSys **files, char *path){
 }
 
 void ln(fileSys **fs, char *input){
-    char **storePaths = makeCharArray2D(256, 256);
+    char **storePaths = makeCharArray2D(2, 1024);
     int pathTotal = 0;
 
     // Tokenize the string by spaces to get each file path
@@ -543,11 +561,11 @@ void ln(fileSys **fs, char *input){
         token = strtok(NULL, " "); // Get the next token
     }
 
-    file *sFile =searchFile((*fs)->root, storePaths[0]);
+    file *sFile =searchFile(fs, (*fs)->root, storePaths[0]);
     if(sFile == NULL || sFile->isDirectory == 1){
         return;
     }
-    char destPath[256];
+    char destPath[1024];
     strcpy(destPath, storePaths[1]);
     char *dName = strrchr(destPath, '/');
     char path[200];
@@ -561,23 +579,18 @@ void ln(fileSys **fs, char *input){
         dName = destPath;
         strcpy(path, (*fs)->active->name);
     }
-    printf("%s\n", path);
-    printf("%s\n", destPath);
-    printf("%s\n\n", dName);
-    file *parentDirectory = searchFile((*fs)->root, path);
+    file *parentDirectory = searchFile(fs, (*fs)->root, path);
     
-    file *newHL = createFile(dName, 0, parentDirectory, NULL);
-    newHL->referenceCount = sFile->referenceCount + 1;
+    file *newHL = createFile(dName, 0, parentDirectory, NULL, sFile->inode);
     newHL->numChild = 0;
     strcpy(newHL->content.data, sFile->content.data);
-    for(int i=0; i<50; i++){
+    for(int i=0; i<256; i++){
         if(parentDirectory->content.children[i] == NULL){
             parentDirectory->content.children[i] = newHL;
             parentDirectory->numChild++;
-            sFile->referenceCount++;
-            return;
+            break;
         }
     }
 
-    destroyArray2D(storePaths, 256);
+    destroyArray2D(storePaths, 2);
 }

@@ -1,38 +1,48 @@
-echo "This test case illustrates the ln command." > info1.txt
-ln info1.txt info2.txt
-echo "We modify the content of info1.txt through info2.txt." > info2.txt
-cat info1.txt
-ln info1.txt info3.txt
-mkdir -p links
-ln info3.txt links/info4.txt
-ln links/info4.txt info5.txt
-echo "Now info1-5.txt are hard linked." > info6.txt
-ln info6.txt info7.txt
-cat info1.txt
-cat info2.txt
-cat info3.txt
-cat links/info4.txt
-cat info5.txt
-cat info6.txt
-cat info7.txt
-echo "overwrite" > links/info4.txt
-cd links
-cat ../info3.txt
-cat ../info6.txt
-echo "this text is appended" >> ../info6.txt
-cat ../info7.txt
-cat ../info2.txt
-cat info4.txt
-cd
-echo "an inode is only removed when all its references are gone." > info6.txt
-rm -r info6.txt links
-ls
-cat info7.txt
-rm info7.txt
-ls
-rm info1.txt info3.txt
-ls
-echo "text written to info2.txt just before it is removed" > info2.txt
-rm info2.txt
-cat info5.txt
+echo "This is the last visible non-bonus test case." > info
+echo "It is a tricky test case." > info
+echo "But hopefully it helps you debug your program" > info
+echo " so that you will pass the hidden test cases too." > info
+echo "GOOD LUCK" > info
+find
+cp info cpy
+ln cpy link
+echo "strange" > link
+cp info link
+rm info
+mkdir -p DIR-1
+cd DIR-1
+echo "file A" > a
+echo "file B" > b
+cat b
+rm b
+ln a b
+cat b
+mkdir -p subdir
+ln b subdir/d
+cp subdir/d a
+echo "changed" > a
+cat a
+cat subdir/d
+echo "more changes" > b
+cat subdir/d
+cd /
+cp -r DIR-1 DIR-2
+cd DIR-2
+cat a
+cat b
+cat subdir/d
+echo "b is changed but it is not linked with subdir-slash-d anymore because cp allocated new inodes for b and subdir-slash-d individually. Therefore subdir-slash-d is not changed." > b
+cat b
+cat subdir/d
+cd /
+cp -r DIR-1 DIR-2/DIR-1
+cp -r DIR-2 DIR-1/DIR-2
+cp -r DIR-1 DIR-2/DIR-3
+cp -r DIR-2 DIR-1/DIR-4
+cp -r DIR-1 DIR-2/DIR-5
+cp -r DIR-2 DIR-1/DIR-6
+cp -r DIR-1 DIR-2/DIR-7
+find
+rm -r DIR-1
+find
 exit
