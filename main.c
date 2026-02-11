@@ -4,6 +4,7 @@
 #include "createFile.h"
 #include "filesystem.h"
 
+//function that returns a number based on which command is inputted
 int getCommandCode(const char *command) {
     if (strcmp(command, "exit") == 0) return 0;
     if (strcmp(command, "ls") == 0) return 1;
@@ -17,12 +18,13 @@ int getCommandCode(const char *command) {
     if (strcmp(command, "cp") == 0) return 9;
     if (strcmp(command, "rm") == 0) return 10;
     if (strcmp(command, "ln") == 0) return 11;
-
-    return -1;  // Unknown command
+    //return -1 if the command is unknown
+    return -1;
 }
 
+//function that handles command
 void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
-    char commandCopy[256];  // No need for malloc, use a fixed-size array
+    char commandCopy[1024];  // No need for malloc, use a fixed-size array
     strncpy(commandCopy, commandLine, sizeof(commandCopy) - 1);  // Copy the commandLine to commandCopy
 
     // Ensure null-termination just in case strncpy doesn't null-terminate
@@ -36,43 +38,43 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
     }
 
     int commandCode = getCommandCode(token);
-
+    //the switch calls the function that matches the command
     switch (commandCode) {
-        case 0:  // exit
+        case 0:  
             (*inputFlag) = 0;
             break;
-        case 1:  // ls
-            ls((*files)->active);  // Assuming ls() doesn't need arguments
+        case 1: 
+            ls(files, restOfCommand);  
             break;
-        case 2:  // cd
-            cd(files, restOfCommand);  // Assuming cd() doesn't need arguments
+        case 2:  
+            cd(files, restOfCommand);  
             break;
-        case 3:  // cat
-            cat(files, restOfCommand);  // Assuming cat() doesn't need arguments
+        case 3:  
+            cat(files, restOfCommand);  
             break;
-        case 4:  // find
-            find();  // Assuming find() doesn't need arguments
+        case 4:  
+            find((*files)->active, ".");  
             break;
-        case 5:  // touch
-            touch();  // Assuming touch() doesn't need arguments
+        case 5:  
+            touch(files, restOfCommand);  
             break;
-        case 6:  // echo
-            echo();  // Assuming echo() doesn't need arguments
+        case 6: 
+            echo(files, restOfCommand); 
             break;
-        case 7:  // mkdir
-            mkdir(files, restOfCommand);  // Assuming mkdir() doesn't need arguments
+        case 7: 
+            mkdir(files, restOfCommand);  
             break;
-        case 8:  // mv
-            mv();  // Assuming mv() doesn't need arguments
+        case 8: 
+            mv(files, restOfCommand);  
             break;
-        case 9:  // cp
-            cp();  // Assuming cp() doesn't need arguments
+        case 9:  
+            cp(files, restOfCommand);  
             break;
-        case 10:  // rm
-            rm();  // Assuming rm() doesn't need arguments
+        case 10: 
+            rm(files, restOfCommand); 
             break;
-        case 11:  // ln
-            ln();  // Assuming ln() doesn't need arguments
+        case 11:  
+            ln(files, restOfCommand); 
             break;
         default:
             printf("Unknown command: %s\n", token);
@@ -83,25 +85,20 @@ void handleCommand(fileSys **files, char *commandLine, int *inputFlag){
 int main(int argc, char *argv[]) {
     // Creating a simple file system
     fileSys *fileSys = initFiles();
-    char commandLine[256];
+    char commandLine[1024];
     int inputFlag = 1;
-
     while(inputFlag){
         if (fgets(commandLine, sizeof(commandLine), stdin) == NULL) break;
-
         // Remove the trailing newline character
         commandLine[strcspn(commandLine, "\n")] = 0;
-
+        //skip empty lines
         if (commandLine[0] == '\0') {
-            continue;  // Skip empty lines
+            continue;  
         }
-
         // Handle the command
         handleCommand(&fileSys, commandLine, &inputFlag);
     }
-
-    printFileSystem(fileSys->root, 3);
-
     freeFile(fileSys->root);
+    free(fileSys);
     return 0;
 }

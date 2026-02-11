@@ -6,16 +6,17 @@
 #include <string.h>
 #include "createFile.h"
 
+//declaration of functions in filesystem.c
 void cd(fileSys **files, char *path);
-void ls(file *active);
+void ls(fileSys **files, char* path);
 void cat(fileSys **files, char *path);
-void find();
-void touch();
-void echo();
+void find(file *root, char* path);
+void touch(fileSys **files, char *path);
+void echo(fileSys **files, char *input);
 void mkdir(fileSys **files, char *path);
-void mv();
-void cp();
-void rm();
-void ln();
+void mv(fileSys **files, char *path);
+void cp(fileSys **files, char *path);
+void rm(fileSys **files, char *path);
+void ln(fileSys **fs, char *input);
 
 #endif
